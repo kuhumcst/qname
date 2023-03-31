@@ -15,9 +15,9 @@
 
 (defprotocol RDFResource
   "Conversions between different ways of representing RDF resources."
-  (->qname [this] "")
-  (->keyword [this] "")
-  (->iri [this] ""))
+  (->qname [this] "Convert an RDF Resource into a QName.")
+  (->keyword [this] "Convert an RDF Resource into an encoded keyword.")
+  (->iri [this] "Convert an RDF Resource into a Resource IRI."))
 
 (defn qname
   "Create a QName record from a `qname-str`, e.g. prefix:identifier."
@@ -43,8 +43,8 @@
                   (str "<" ns-uri (name this) ">")))
 
   Keyword
-  (->qname [this] (QName. (fmt/encode-kw-ns (namespace this))
-                          (fmt/encode-kw-name (name this))))
+  (->qname [this] (->QName (fmt/decode-kw-ns (namespace this))
+                           (fmt/decode-kw-name (name this))))
   (->keyword [this] this)
   (->iri [this] (let [ns-uri (-> (namespace this)
                                  (fmt/decode-kw-ns)
@@ -56,10 +56,10 @@
                               (subs this 1 (dec (count this)))
                               this)]
                     (when-let [[prefix-iri identifier] (iri-parts iri)]
-                      (QName. (-> (voc/namespace-to-ns)
-                                  (get prefix-iri)
-                                  (voc/ns-to-prefix))
-                              identifier))))
+                      (->QName (-> (voc/namespace-to-ns)
+                                   (get prefix-iri)
+                                   (voc/ns-to-prefix))
+                               identifier))))
   (->keyword [this] (->keyword (->qname this)))
   (->iri [this] (if (resource-iri? this)
                   this
@@ -91,4 +91,15 @@
   (->qname (QName. "dn" "synset/1234"))
   (->qname :rdf/foobar)
   (->qname "http://www.w3.org/2000/01/rdf-schema#foobar")
+
+  ;; The grand test
+  (= "<http://www.w3.org/2000/01/rdf-schema#123foo/bar>"
+     (-> "<http://www.w3.org/2000/01/rdf-schema#123foo/bar>"
+         ->iri
+         ->qname
+         ->keyword
+         ->iri
+         ->keyword
+         ->qname
+         ->iri))
   #_.)
