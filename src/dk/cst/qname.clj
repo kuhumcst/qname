@@ -19,6 +19,11 @@
   (->keyword [this] "")
   (->iri [this] ""))
 
+(defn qname
+  "Create a QName record from a `qname-str`, e.g. prefix:identifier."
+  [qname-str]
+  (apply ->QName (str/split qname-str #":")))
+
 (defn iri-parts
   "Return [prefix-iri identifier] for a normalized `iri`."
   [iri]
@@ -61,6 +66,8 @@
                   (str "<" this ">"))))
 
 (comment
+  (qname "rdf:1234/foobar")
+  (qname ":1234/foobar")
   (iri-parts "http://www.w3.org/2000/01/rdf-schema#123foo/bar")
 
   ;; Calling functions on the record itself
